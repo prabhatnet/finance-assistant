@@ -1,0 +1,86 @@
+# ============================================================
+# AI Finance Assistant - Configuration
+# ============================================================
+
+app:
+  name: "AI Finance Assistant"
+  version: "0.1.0"
+  description: "Multi-agent AI finance assistant for financial literacy"
+  debug: false
+
+llm:
+  provider: "openai"           # openai | google | anthropic
+  model: "gpt-4o-mini"
+  temperature: 0.1
+  max_tokens: 4096
+  request_timeout: 30
+
+embeddings:
+  model: "all-MiniLM-L6-v2"
+  dimension: 384
+
+vector_store:
+  type: "faiss"                # faiss | chroma
+  persist_directory: "./data/vector_store"
+  collection_name: "finance_knowledge"
+  chunk_size: 1000
+  chunk_overlap: 200
+
+rag:
+  top_k: 5
+  score_threshold: 0.7
+  knowledge_base_path: "./src/data/knowledge_base"
+
+market_data:
+  provider: "yfinance"         # yfinance | alpha_vantage
+  cache_ttl_seconds: 300
+  default_symbols:
+    - "AAPL"
+    - "GOOGL"
+    - "MSFT"
+    - "AMZN"
+    - "TSLA"
+    - "SPY"
+    - "QQQ"
+    - "VOO"
+
+agents:
+  finance_qa:
+    name: "Finance Q&A Agent"
+    description: "Handles general financial education queries"
+    temperature: 0.1
+  portfolio:
+    name: "Portfolio Analysis Agent"
+    description: "Reviews and analyzes user portfolios"
+    temperature: 0.1
+  market:
+    name: "Market Analysis Agent"
+    description: "Provides real-time market insights"
+    temperature: 0.2
+  goal_planning:
+    name: "Goal Planning Agent"
+    description: "Assists with financial goal setting and planning"
+    temperature: 0.2
+  news:
+    name: "News Synthesizer Agent"
+    description: "Summarizes and contextualizes financial news"
+    temperature: 0.3
+  tax:
+    name: "Tax Education Agent"
+    description: "Explains tax concepts and account types"
+    temperature: 0.1
+
+workflow:
+  max_iterations: 10
+  timeout_seconds: 60
+
+logging:
+  level: "INFO"
+  format: "json"
+  file: "./logs/app.log"
+
+streamlit:
+  page_title: "AI Finance Assistant"
+  page_icon: "💰"
+  layout: "wide"
+  sidebar_state: "expanded"

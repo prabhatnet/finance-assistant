@@ -1,0 +1,54 @@
+# ============================================================
+# AI Finance Assistant - Dependencies
+# ============================================================
+# Production-grade multi-agent AI finance assistant
+# using LangGraph with RAG and real-time market APIs
+# ============================================================
+
+# --- Core AI / LLM Framework ---
+langchain>=0.3.0,<0.4.0
+langchain-core>=0.3.0,<0.4.0
+langchain-community>=0.3.0,<0.4.0
+langchain-openai>=0.2.0,<0.3.0
+langchain-google-genai>=2.0.0,<3.0.0
+langgraph>=0.2.0,<0.3.0
+
+# --- Embeddings & Vector Store ---
+faiss-cpu>=1.8.0,<2.0.0
+# chromadb>=0.5.0,<0.6.0
+sentence-transformers>=3.0.0,<4.0.0
+
+# --- Market Data APIs ---
+yfinance>=0.2.40,<0.3.0
+alpha-vantage>=3.0.0,<4.0.0
+requests>=2.32.0,<3.0.0
+
+# --- Web Interface ---
+streamlit>=1.38.0,<2.0.0
+plotly>=5.24.0,<6.0.0
+
+# --- Data Processing ---
+pandas>=2.2.0,<3.0.0
+numpy>=1.26.0,<3.0.0
+
+# --- Configuration & Environment ---
+python-dotenv>=1.0.0,<2.0.0
+pyyaml>=6.0.0,<7.0.0
+pydantic>=2.9.0,<3.0.0
+pydantic-settings>=2.5.0,<3.0.0
+
+# --- Logging & Monitoring ---
+structlog>=24.0.0,<25.0.0
+
+# --- Testing ---
+pytest>=8.3.0,<9.0.0
+pytest-cov>=5.0.0,<6.0.0
+pytest-asyncio>=0.24.0,<0.25.0
+pytest-mock>=3.14.0,<4.0.0
+
+# --- Code Quality ---
+ruff>=0.6.0,<0.7.0
+mypy>=1.11.0,<2.0.0
+
+# --- Tiktoken (token counting) ---
+tiktoken>=0.7.0,<0.8.0

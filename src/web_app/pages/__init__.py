@@ -1,0 +1,1 @@
+"""Web app pages module."""
