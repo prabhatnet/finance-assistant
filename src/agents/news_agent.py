@@ -2,6 +2,7 @@
 
 from src.agents.base_agent import BaseAgent
 from src.core.state import AgentState
+from src.data.market_data import MarketDataProvider
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -36,13 +37,17 @@ class NewsSynthesizerAgent(BaseAgent):
     educational context suitable for beginner investors.
     """
 
-    def __init__(self, llm: object) -> None:
+    # Default symbols to fetch news for when no specific symbols are mentioned
+    DEFAULT_NEWS_SYMBOLS = ["SPY", "QQQ", "AAPL", "MSFT", "TSLA"]
+
+    def __init__(self, llm: object, market_data_provider: MarketDataProvider | None = None) -> None:
         super().__init__(
             name="News Synthesizer Agent",
             description="Summarizes and contextualizes financial news",
             llm=llm,
             system_prompt=NEWS_SYSTEM_PROMPT,
         )
+        self.market_data = market_data_provider
 
     async def process(self, state: AgentState) -> AgentState:
         """Process a news synthesis query.
@@ -57,6 +62,16 @@ class NewsSynthesizerAgent(BaseAgent):
         query = state.get("query", "")
         chat_history = state.get("chat_history", [])
         news_articles = state.get("news_articles", [])
+
+        # Fetch real news if none pre-populated
+        if not news_articles and self.market_data:
+            symbols = state.get("symbols") or self.DEFAULT_NEWS_SYMBOLS
+            for symbol in symbols[:3]:  # Limit to 3 symbols to avoid too many API calls
+                try:
+                    articles = await self.market_data.get_news(symbol)
+                    news_articles.extend(articles)
+                except Exception:
+                    logger.warning("Failed to fetch news for %s", symbol)
 
         context = ""
         if news_articles:

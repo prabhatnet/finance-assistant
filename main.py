@@ -51,7 +51,7 @@ def initialize_app() -> None:
         "portfolio": PortfolioAnalysisAgent(llm=llm),
         "market": MarketAnalysisAgent(llm=llm, market_data_provider=market_data),
         "goal_planning": GoalPlanningAgent(llm=llm),
-        "news": NewsSynthesizerAgent(llm=llm),
+        "news": NewsSynthesizerAgent(llm=llm, market_data_provider=market_data),
         "tax": TaxEducationAgent(llm=llm, retriever=retriever),
     }
 

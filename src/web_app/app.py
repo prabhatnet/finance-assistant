@@ -26,6 +26,12 @@ def main() -> None:
         initial_sidebar_state="expanded",
     )
 
+    # Initialize agents and workflow once per session
+    if "app_initialized" not in st.session_state:
+        from main import initialize_app
+        initialize_app()
+        st.session_state.app_initialized = True
+
     # Initialize session state
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []

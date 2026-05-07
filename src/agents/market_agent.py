@@ -1,6 +1,9 @@
 """Market Analysis Agent - Provides real-time market insights using live data."""
 
+from langchain_core.messages import HumanMessage, SystemMessage
+
 from src.agents.base_agent import BaseAgent
+from src.core.prompts import SYMBOL_EXTRACTION_PROMPT
 from src.core.state import AgentState
 from src.data.market_data import MarketDataProvider
 from src.utils.logger import get_logger
@@ -64,6 +67,10 @@ class MarketAnalysisAgent(BaseAgent):
         chat_history = state.get("chat_history", [])
         symbols = state.get("symbols", [])
 
+        # Extract ticker symbols from the query if not already populated
+        if not symbols:
+            symbols = await self._extract_symbols(query)
+
         # Fetch real-time market data
         context = ""
         market_context = {}
@@ -91,6 +98,21 @@ class MarketAnalysisAgent(BaseAgent):
             "agent_name": self.name,
             "market_data": market_context,
         }
+
+    async def _extract_symbols(self, query: str) -> list[str]:
+        """Extract stock ticker symbols from the query using the LLM."""
+        try:
+            messages = [
+                HumanMessage(content=SYMBOL_EXTRACTION_PROMPT.format(query=query))
+            ]
+            response = await self.llm.ainvoke(messages)
+            result = str(response.content).strip().upper()
+            if result == "NONE" or not result:
+                return []
+            return [s.strip() for s in result.split(",") if s.strip()]
+        except Exception:
+            logger.warning("Symbol extraction failed for query: %s", query)
+            return []
 
     def _format_market_context(self, market_data: dict) -> str:
         """Format market data into a context string for the LLM.

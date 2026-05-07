@@ -154,14 +154,32 @@ class MarketDataProvider:
 
             articles = []
             for item in news[:10]:
-                articles.append({
-                    "title": item.get("title", ""),
-                    "source": item.get("publisher", "Unknown"),
-                    "link": item.get("link", ""),
-                    "published": item.get("providerPublishTime", ""),
-                    "summary": item.get("title", ""),
-                })
+                # yfinance 0.2.58+ uses nested 'content' key
+                content = item.get("content", {})
+                if content:
+                    title = content.get("title", "")
+                    source = content.get("provider", {}).get("publisherName", "Unknown")
+                    link = content.get("canonicalUrl", {}).get("url", "")
+                    published = content.get("pubDate", "")
+                    summary = content.get("summary", title)
+                else:
+                    # Fallback for older yfinance structure
+                    title = item.get("title", "")
+                    source = item.get("publisher", "Unknown")
+                    link = item.get("link", "")
+                    published = item.get("providerPublishTime", "")
+                    summary = item.get("title", "")
 
+                if title:  # Only add if we actually got a title
+                    articles.append({
+                        "title": title,
+                        "source": source,
+                        "link": link,
+                        "published": published,
+                        "summary": summary,
+                    })
+
+            logger.info("Fetched %d news articles for %s", len(articles), symbol)
             self.cache.set(cache_key, articles)
             return articles
         except Exception:
