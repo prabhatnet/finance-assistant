@@ -112,30 +112,61 @@ def _display_stock_info(symbol: str) -> None:
         st.error(f"Error fetching data for {symbol}. Please try again later.")
 
 
+@st.cache_data(ttl=300, show_spinner=False)
+def _fetch_quotes_cached(symbols: tuple[str, ...]) -> list[dict]:
+    """Fetch quotes for multiple symbols, cached for 5 minutes."""
+    from src.data.market_data import MarketDataProvider
+
+    provider = MarketDataProvider()
+
+    async def _fetch_all() -> list[dict]:
+        import asyncio
+        tasks = [provider.get_quote(s) for s in symbols]
+        return await asyncio.gather(*tasks)
+
+    return asyncio.run(_fetch_all())
+
+
 def _display_market_overview(symbols: list[str]) -> None:
-    """Display a quick overview of multiple stocks.
+    """Display a quick overview of multiple stocks with live data.
 
     Args:
         symbols: List of stock ticker symbols.
     """
-    st.info(
-        "💡 Configure your API keys in .env to enable live market data. "
-        "The display below shows the data structure."
-    )
+    with st.spinner("Fetching live market data..."):
+        quotes = _fetch_quotes_cached(tuple(symbols))
 
-    # Display as a table placeholder
-    sample_data = []
-    for symbol in symbols:
-        sample_data.append({
+    rows = []
+    for symbol, q in zip(symbols, quotes):
+        price = q.get("price", 0) or 0
+        change = q.get("change", 0) or 0
+        change_pct = q.get("change_percent", 0) or 0
+        volume = q.get("volume", 0) or 0
+
+        rows.append({
             "Symbol": symbol,
-            "Price": "—",
-            "Change": "—",
-            "Change %": "—",
-            "Volume": "—",
+            "Price": f"${price:,.2f}" if price else "—",
+            "Change": f"${change:+,.2f}" if price else "—",
+            "Change %": f"{change_pct:+.2f}%" if price else "—",
+            "Volume": f"{volume:,}" if volume else "—",
+            "_change": change,  # for colour logic
         })
 
-    df = pd.DataFrame(sample_data)
-    st.dataframe(df, use_container_width=True, hide_index=True)
+    df = pd.DataFrame(rows)
+
+    # Colour the Change % column green/red
+    def _colour_change(val: str) -> str:
+        if val.startswith("+"):
+            return "color: #22c55e"
+        if val.startswith("-"):
+            return "color: #ef4444"
+        return ""
+
+    display_df = df.drop(columns=["_change"])
+    styled = display_df.style.applymap(_colour_change, subset=["Change", "Change %"])
+    st.dataframe(styled, use_container_width=True, hide_index=True)
+
+    st.caption("Data refreshes every 5 minutes. Prices from yFinance.")
 
 
 def _format_market_cap(value: int) -> str:
