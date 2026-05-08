@@ -1,3 +1,14 @@
+---
+title: AI Finance Assistant
+emoji: 💰
+colorFrom: green
+colorTo: blue
+sdk: streamlit
+sdk_version: "1.38.0"
+app_file: app.py
+pinned: false
+---
+
 # 💰 AI Finance Assistant
 
 **Production-grade multi-agent AI finance assistant built with LangGraph, RAG, and real-time market APIs.**
