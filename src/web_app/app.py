@@ -1,6 +1,11 @@
 """Main Streamlit application entry point for the AI Finance Assistant."""
 
 import asyncio
+import sys
+from pathlib import Path
+
+# Add project root to path so 'src' is importable
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import streamlit as st
 
@@ -12,6 +17,13 @@ from src.web_app.components.sidebar import render_sidebar
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
+
+
+@st.cache_resource(show_spinner="Loading AI Finance Assistant...")
+def _initialize_app() -> None:
+    """Initialize all app components once, cached across all sessions."""
+    from main import initialize_app
+    initialize_app()
 
 
 def main() -> None:
@@ -26,11 +38,8 @@ def main() -> None:
         initial_sidebar_state="expanded",
     )
 
-    # Initialize agents and workflow once per session
-    if "app_initialized" not in st.session_state:
-        from main import initialize_app
-        initialize_app()
-        st.session_state.app_initialized = True
+    # Initialize agents and workflow once across all sessions (cached)
+    _initialize_app()
 
     # Initialize session state
     if "chat_history" not in st.session_state:
