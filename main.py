@@ -18,6 +18,7 @@ from src.agents.market_agent import MarketAnalysisAgent
 from src.agents.goal_planning_agent import GoalPlanningAgent
 from src.agents.news_agent import NewsSynthesizerAgent
 from src.agents.tax_agent import TaxEducationAgent
+from src.agents.planner_agent import PlannerAgent
 from src.workflow.router import QueryRouter
 from src.workflow.nodes import initialize_nodes
 from src.utils.logger import setup_logging, get_logger
@@ -53,11 +54,12 @@ def initialize_app() -> None:
         "goal_planning": GoalPlanningAgent(llm=llm),
         "news": NewsSynthesizerAgent(llm=llm, market_data_provider=market_data),
         "tax": TaxEducationAgent(llm=llm, retriever=retriever),
+        "planner": PlannerAgent(llm=llm),
     }
 
     # Create router and initialize workflow nodes
     router = QueryRouter(llm=llm)
-    initialize_nodes(agents=agents, router=router)
+    initialize_nodes(agents=agents, router=router, llm=llm)
 
     logger.info("Application initialized successfully with %d agents", len(agents))
 

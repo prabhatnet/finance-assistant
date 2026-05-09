@@ -51,13 +51,30 @@ Democratizing financial literacy through intelligent conversational AI — helpi
 │                    LangGraph Workflow Engine                      │
 │  ┌──────────────────────────────────────────────────────────┐   │
 │  │                    Query Router (LLM)                      │   │
-│  └───┬──────┬──────┬──────┬──────┬──────┬───────────────────┘   │
-│      │      │      │      │      │      │                        │
-│  ┌───▼──┐┌──▼──┐┌──▼──┐┌──▼──┐┌──▼──┐┌──▼──┐                  │
-│  │Fin QA││Port.││Mkt. ││Goal ││News ││Tax  │  Specialized      │
-│  │Agent ││Agent││Agent││Agent││Agent││Agent│  Agents            │
-│  └───┬──┘└──┬──┘└──┬──┘└──┬──┘└──┬──┘└──┬──┘                  │
-└──────┼──────┼──────┼──────┼──────┼──────┼───────────────────────┘
+│  └───┬──────┬──────┬──────┬──────┬──────┬──────┬────────────┘   │
+│      │      │      │      │      │      │      │                 │
+│      │   ┌──▼──┐┌──▼──┐┌──▼──┐┌──▼──┐┌──▼──┐  │  Single-domain │
+│      │   │Port.││Mkt. ││Goal ││News ││Tax  │  │  Agents        │
+│      │   │Agent││Agent││Agent││Agent││Agent│  │                │
+│      │   └──┬──┘└──┬──┘└──┬──┘└──┬──┘└──┬──┘  │                │
+│      │      │      │      │      │      │      │                │
+│  ┌───▼──┐   │      │      │      │      │  ┌───▼──────────────┐ │
+│  │Fin QA│   │      │      │      │      │  │  Planner Agent   │ │
+│  │Agent │   │      │      │      │      │  │  (LLM decompose) │ │
+│  └───┬──┘   │      │      │      │      │  └───────┬──────────┘ │
+│      │      │      │      │      │      │          │            │
+│      │      │      │      │      │      │  ┌───────▼──────────┐ │
+│      │      │      │      │      │      │  │Multi-Agent       │ │
+│      │      │      │      │      │      │  │Coordinator       │ │
+│      │      │      │      │      │      │  │(parallel asyncio)│ │
+│      │      │      │      │      │      │  └──┬────┬────┬─────┘ │
+│      │      │      │      │      │      │     │    │    │       │
+│      │      │      │      │      │      │  Mkt│  Tax│ Goal│     │
+│      │      │      │      │      │      │     │    │    │       │
+│      │      │      │      │      │      │  ┌──▼────▼────▼─────┐ │
+│      │      │      │      │      │      │  │  LLM Synthesizer  │ │
+│      │      │      │      │      │      │  └──────────────────┘ │
+└──────┼──────┼──────┼──────┼──────┼──────┼──────────────────────┘
        │      │      │      │      │      │
 ┌──────▼──────▼──────┼──────▼──────▼──────▼───────────────────────┐
 │            RAG Pipeline            │     Market Data APIs         │
@@ -71,8 +88,22 @@ Democratizing financial literacy through intelligent conversational AI — helpi
 
 ### Data Flow
 
+**Single-domain query** (e.g. "What is a bond?"):
 ```
-User Query → Workflow Router → Appropriate Agent(s) → RAG Retrieval → LLM Processing → Response → UI
+User Query → Router → Specialized Agent → RAG Retrieval → LLM → Response → UI
+```
+
+**Multi-domain query** (e.g. retirement + market volatility + tax implications):
+```
+User Query → Router → Planner Agent (decompose)
+                           │
+               ┌───────────┼───────────┐
+               ▼           ▼           ▼
+          Market Agent  Tax Agent  Goal Agent   (parallel)
+               │           │           │
+               └───────────┼───────────┘
+                           ▼
+                    LLM Synthesizer → Unified Response → UI
 ```
 
 ### Core Technology Stack
@@ -90,7 +121,7 @@ User Query → Workflow Router → Appropriate Agent(s) → RAG Retrieval → LL
 
 ## ✨ Features
 
-### 6 Specialized Agents
+### 7 Specialized Agents
 
 1. **Finance Q&A Agent** — General financial education (stocks, bonds, ETFs, diversification)
 2. **Portfolio Analysis Agent** — Portfolio review, diversification assessment, risk analysis
@@ -98,12 +129,14 @@ User Query → Workflow Router → Appropriate Agent(s) → RAG Retrieval → LL
 4. **Goal Planning Agent** — SMART goal setting, savings plans, retirement projections
 5. **News Synthesizer Agent** — Financial news summarization with educational context
 6. **Tax Education Agent** — Tax-advantaged accounts, capital gains, tax strategies
+7. **Planner Agent** — Orchestrates complex multi-domain queries by decomposing them into targeted sub-tasks for the relevant specialist agents, then synthesizes a unified answer
 
 ### Key Capabilities
 
 - **RAG-Powered Responses** — Grounded in a curated financial knowledge base with source citations
 - **Real-Time Market Data** — Live stock quotes, historical charts, company information
 - **Intelligent Routing** — LLM-based query classification routes to the optimal agent
+- **Multi-Agent Planning** — Complex cross-domain questions (e.g. retirement + market + tax) are automatically decomposed, run in parallel across specialist agents, and synthesized into one coherent answer
 - **Conversation Context** — Multi-turn conversations with history preservation
 - **Portfolio Visualization** — Interactive charts showing allocation and performance
 - **Proper Disclaimers** — Clear separation between education and financial advice
@@ -122,7 +155,8 @@ ai_finance_assistant/
 │   │   ├── market_agent.py       # Real-time market insights
 │   │   ├── goal_planning_agent.py# Financial goal planning
 │   │   ├── news_agent.py         # News synthesis
-│   │   └── tax_agent.py          # Tax education
+│   │   ├── tax_agent.py          # Tax education
+│   │   └── planner_agent.py      # Multi-domain query planner
 │   ├── core/                      # Core infrastructure
 │   │   ├── config.py             # Configuration management (Pydantic + YAML)
 │   │   ├── llm.py                # LLM factory (OpenAI/Google/Anthropic)
@@ -258,7 +292,7 @@ docker run -p 8501:8501 --env-file .env ai-finance-assistant
 
 ```
 User: "What is dollar-cost averaging and why should I use it?"
-Agent: [Finance Q&A Agent routes and responds with educational content + RAG sources]
+Agent: [Finance Q&A Agent responds with educational content + RAG sources]
 
 User: "Analyze my portfolio: 50 shares AAPL, 30 shares MSFT, 100 shares VOO"
 Agent: [Portfolio Agent analyzes diversification, concentration, and risk]
@@ -274,6 +308,20 @@ Agent: [News Agent synthesizes recent financial news]
 
 User: "How do Roth IRA conversions work?"
 Agent: [Tax Agent explains with appropriate disclaimers]
+
+User: "I am 45, want to retire in 15 years, the market looks volatile — should I increase my SIP investments and what are the tax implications?"
+Agent: [Router detects multi-domain query → Planner decomposes into 3 sub-tasks
+       → Market, Tax, and Goal Planning agents run in parallel
+       → LLM Synthesizer merges outputs into a single cohesive answer]
+
+User: "Why did Tesla stock fall today and should long-term investors worry?"
+Agent: [Router detects multi-domain query → Planner decomposes into  3 sub-tasks ('market', 'news', 'portfolio')]
+
+User: "I am 40 years old and want to retire at 60. What tax-efficient investments should I consider?"
+Agent: [Router detects multi-domain query → Planner decomposes into  2 sub-tasks ('goal_planning', 'tax')]
+
+User: "My portfolio is 70% tech stocks. Given the current market and taxes, should I diversify?"
+Agent: [Router detects multi-domain query → Planner decomposes into  2 sub-tasks ('portfolio', 'market', 'tax')]
 ```
 
 ### Programmatic Usage
@@ -321,6 +369,10 @@ class AgentState(TypedDict):
     portfolio_data: dict               # Portfolio holdings
     market_data: dict                  # Market quotes
     symbols: list[str]                 # Extracted ticker symbols
+    # Multi-agent planner fields
+    is_multi_agent: bool               # True when planner dispatched multiple agents
+    plan: list[dict]                   # Planner's sub-tasks: [{"agent", "sub_query"}, ...]
+    agent_outputs: dict[str, str]      # Raw outputs keyed by agent name
     error: str | None                  # Error information
 ```
 

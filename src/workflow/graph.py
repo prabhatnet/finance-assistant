@@ -9,7 +9,9 @@ from src.workflow.nodes import (
     finance_qa_node,
     goal_planning_node,
     market_analysis_node,
+    multi_agent_coordinator_node,
     news_synthesis_node,
+    planner_node,
     portfolio_analysis_node,
     route_query_node,
     tax_education_node,
@@ -26,8 +28,12 @@ def create_workflow_graph() -> StateGraph:
     The graph follows this flow:
     1. User query enters the router node
     2. Router determines which specialized agent to invoke
-    3. The appropriate agent processes the query
-    4. Response is returned to the user
+       - Simple single-domain queries → direct to the matching agent
+       - Complex multi-domain queries → planner → multi-agent coordinator
+    3. For single-agent path: the agent processes the query and returns
+    4. For multi-agent path: the planner decomposes the query, the coordinator
+       runs Market and Tax (and other) agents in parallel, then synthesizes
+    5. Response is returned to the user
 
     Returns:
         Compiled LangGraph StateGraph ready for invocation.
@@ -43,6 +49,8 @@ def create_workflow_graph() -> StateGraph:
     workflow.add_node("goal_planning", goal_planning_node)
     workflow.add_node("news", news_synthesis_node)
     workflow.add_node("tax", tax_education_node)
+    workflow.add_node("planner", planner_node)
+    workflow.add_node("multi_agent_coordinator", multi_agent_coordinator_node)
 
     # Set entry point
     workflow.set_entry_point("router")
@@ -58,16 +66,21 @@ def create_workflow_graph() -> StateGraph:
             "goal_planning": "goal_planning",
             "news": "news",
             "tax": "tax",
+            "planner": "planner",
         },
     )
 
-    # All agents lead to END
+    # Planner always hands off to the multi-agent coordinator
+    workflow.add_edge("planner", "multi_agent_coordinator")
+
+    # All terminal nodes lead to END
     workflow.add_edge("finance_qa", END)
     workflow.add_edge("portfolio", END)
     workflow.add_edge("market", END)
     workflow.add_edge("goal_planning", END)
     workflow.add_edge("news", END)
     workflow.add_edge("tax", END)
+    workflow.add_edge("multi_agent_coordinator", END)
 
     # Compile the graph
     compiled = workflow.compile()

@@ -31,6 +31,11 @@ class AgentState(TypedDict, total=False):
     news_articles: list[dict[str, Any]]     # Fetched news articles
     user_profile: dict[str, Any]            # User's financial profile for goal planning
 
+    # --- Multi-Agent Planner ---
+    is_multi_agent: bool                    # Whether the planner dispatched multiple agents
+    plan: list[dict[str, str]]              # Planner's list of {"agent": ..., "sub_query": ...}
+    agent_outputs: dict[str, str]           # Collected outputs keyed by agent name
+
     # --- Workflow Control ---
     error: str | None                       # Error message if processing failed
     iteration_count: int                    # Current workflow iteration counter

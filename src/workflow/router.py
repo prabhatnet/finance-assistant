@@ -11,7 +11,7 @@ from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-VALID_ROUTES = {"finance_qa", "portfolio", "market", "goal_planning", "news", "tax"}
+VALID_ROUTES = {"finance_qa", "portfolio", "market", "goal_planning", "news", "tax", "planner"}
 
 
 class QueryRouter:
