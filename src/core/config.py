@@ -1,4 +1,17 @@
-"""Application configuration management using Pydantic Settings and YAML."""
+"""Application configuration management using Pydantic Settings and YAML.
+
+Secret / API key loading strategy
+----------------------------------
+Locally          : pydantic-settings reads from the .env file at the project root.
+HuggingFace Spaces: HF injects every secret as a plain OS environment variable;
+                   no .env file is present, so pydantic-settings falls back to
+                   reading those env vars directly.  No code change is needed.
+
+Priority order (highest → lowest):
+  1. Real OS environment variables  (HF Spaces secrets land here)
+  2. .env file on disk              (local development)
+  3. Pydantic field defaults
+"""
 
 from __future__ import annotations
 
@@ -11,10 +24,16 @@ import yaml
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
+# Absolute path to the project root (two levels up from this file: src/core/config.py)
+_PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+# Detect HuggingFace Spaces: HF sets the SPACE_ID env var on every Space runtime
+_ON_HF_SPACES: bool = "SPACE_ID" in os.environ
+
 
 def _load_yaml_config() -> dict[str, Any]:
     """Load configuration from config.yaml file."""
-    config_path = Path(__file__).resolve().parents[2] / "config.yaml"
+    config_path = _PROJECT_ROOT / "config.yaml"
     if config_path.exists():
         with open(config_path) as f:
             return yaml.safe_load(f) or {}
@@ -45,7 +64,7 @@ class VectorStoreSettings(BaseSettings):
     """Vector store configuration."""
 
     type: str = Field(default="faiss")
-    persist_directory: str = Field(default="./data/vector_store")
+    persist_directory: str = Field(default=str(_PROJECT_ROOT / "data" / "vector_store"))
     collection_name: str = Field(default="finance_knowledge")
     chunk_size: int = Field(default=1000)
     chunk_overlap: int = Field(default=200)
@@ -56,7 +75,7 @@ class RAGSettings(BaseSettings):
 
     top_k: int = Field(default=5)
     score_threshold: float = Field(default=0.7)
-    knowledge_base_path: str = Field(default="./src/data/knowledge_base")
+    knowledge_base_path: str = Field(default=str(_PROJECT_ROOT / "src" / "data" / "knowledge_base"))
 
 
 class MarketDataSettings(BaseSettings):
@@ -92,7 +111,10 @@ class Settings(BaseSettings):
     market_data: MarketDataSettings = Field(default_factory=MarketDataSettings)
 
     model_config = {
-        "env_file": ".env",
+        # Absolute path so the file is found regardless of working directory.
+        # On HuggingFace Spaces this file won't exist; pydantic-settings silently
+        # skips it and reads secrets directly from OS environment variables instead.
+        "env_file": str(_PROJECT_ROOT / ".env"),
         "env_file_encoding": "utf-8",
         "extra": "ignore",
     }
