@@ -11,6 +11,7 @@ from src.core.llm import create_llm
 from src.rag.embeddings import create_embeddings
 from src.rag.vector_store import VectorStoreManager
 from src.rag.retriever import RAGRetriever
+from src.rag.indexer import KnowledgeBaseIndexer
 from src.data.market_data import MarketDataProvider
 from src.agents.finance_qa_agent import FinanceQAAgent
 from src.agents.portfolio_agent import PortfolioAnalysisAgent
@@ -41,6 +42,15 @@ def initialize_app() -> None:
     embeddings = create_embeddings(settings)
     vector_store = VectorStoreManager(embeddings, settings)
     vector_store.initialize()
+
+    # Auto-build the knowledge base index if the vector store is empty.
+    # Required on HuggingFace Spaces where data/vector_store/ is not pre-committed.
+    if vector_store._store is None:
+        logger.info("Vector store empty — auto-building knowledge base index...")
+        vector_store = KnowledgeBaseIndexer(settings).index()
+        if vector_store._store is None:
+            logger.warning("No documents found in knowledge base; RAG will be disabled")
+
     retriever = RAGRetriever(vector_store, settings)
 
     # Initialize market data provider

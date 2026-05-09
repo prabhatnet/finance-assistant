@@ -58,7 +58,7 @@ def create_llm(
         )
 
     if provider == "anthropic":
-        from langchain_community.chat_models import ChatAnthropic
+        from langchain_anthropic import ChatAnthropic
 
         return ChatAnthropic(
             model=model,
