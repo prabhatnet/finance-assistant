@@ -201,25 +201,23 @@ class MarketDataProvider:
         info = ticker.info
         fast_info = ticker.fast_info
 
+        last_price = float(getattr(fast_info, "last_price", None) or 0)
+        previous_close = float(getattr(fast_info, "previous_close", None) or 0)
+        change = round(last_price - previous_close, 2)
+        change_pct = round(
+            (change / previous_close * 100) if previous_close else 0.0,
+            2,
+        )
+
         return {
             "symbol": symbol.upper(),
-            "price": round(float(fast_info.get("lastPrice", 0)), 2),
-            "change": round(
-                float(fast_info.get("lastPrice", 0)) - float(fast_info.get("previousClose", 0)),
-                2,
-            ),
-            "change_percent": round(
-                (
-                    (float(fast_info.get("lastPrice", 0)) - float(fast_info.get("previousClose", 0)))
-                    / float(fast_info.get("previousClose", 1))
-                    * 100
-                ),
-                2,
-            ),
-            "volume": int(fast_info.get("lastVolume", 0)),
-            "market_cap": int(fast_info.get("marketCap", 0)),
+            "price": round(last_price, 2),
+            "change": change,
+            "change_percent": change_pct,
+            "volume": int(getattr(fast_info, "last_volume", None) or 0),
+            "market_cap": int(getattr(fast_info, "market_cap", None) or 0),
             "name": info.get("longName", symbol),
-            "currency": fast_info.get("currency", "USD"),
+            "currency": getattr(fast_info, "currency", "USD") or "USD",
         }
 
     async def _fetch_alpha_vantage(self, symbol: str) -> dict[str, Any]:
