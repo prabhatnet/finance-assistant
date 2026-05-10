@@ -22,8 +22,8 @@ sentence-transformers>=3.0.0,<4.0.0
 
 # --- Market Data APIs ---
 yfinance>=0.2.40,<0.3.0
-alpha-vantage>=3.0.0,<4.0.0
 requests>=2.32.0,<3.0.0
+# alpha-vantage>=3.0.0,<4.0.0  # Only needed if MARKET_DATA_PROVIDER=alpha_vantage
 
 # --- Web Interface ---
 streamlit>=1.38.0,<2.0.0
@@ -53,4 +53,5 @@ structlog>=24.0.0,<25.0.0
 # mypy>=1.11.0,<2.0.0
 
 # --- Tiktoken (token counting) ---
-tiktoken>=0.7.0,<0.8.0
+# Keep this unconstrained so Hugging Face (Python 3.13) can resolve a prebuilt wheel.
+tiktoken>=0.9.0,<1.0.0
